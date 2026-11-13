@@ -3,62 +3,208 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#14102e">
 <title>오늘의 운세</title>
 <style>
+  :root {
+    --bg1: #120e2b; --bg2: #2a1659; --bg3: #5b2a9e;
+    --card: rgba(255,255,255,.08); --card-border: rgba(255,255,255,.16);
+    --text: #f4f1ff; --muted: #b9b1da; --faint: rgba(244,241,255,.38);
+    --accent: #a78bfa; --accent2: #f0abfc; --gold: #fcd34d; --danger: #fda4af;
+    --radius: 22px;
+  }
   * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
   body {
-    margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
-    font-family: -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
-    background: linear-gradient(160deg, #1e1b4b, #4c1d95 60%, #7e22ce); color: #1f2937;
+    margin: 0; min-height: 100vh; min-height: 100dvh; color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard", "Malgun Gothic", sans-serif;
+    background: radial-gradient(1200px 700px at 80% -10%, var(--bg3), transparent 60%),
+                radial-gradient(900px 600px at -10% 110%, #3b1d7a, transparent 55%),
+                linear-gradient(160deg, var(--bg1), var(--bg2));
+    background-attachment: fixed;
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px 16px; overflow-x: hidden;
   }
+
+  /* 반짝이는 별 배경 */
+  .stars { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+  .stars i {
+    position: absolute; width: 3px; height: 3px; border-radius: 50%; background: #fff;
+    opacity: .2; animation: twinkle 3.4s ease-in-out infinite;
+  }
+  @keyframes twinkle { 50% { opacity: .95; transform: scale(1.5); } }
+
   .card {
-    width: min(92vw, 420px); background: #fff; border-radius: 20px; padding: 32px 28px;
-    box-shadow: 0 20px 50px rgba(0,0,0,.35); text-align: center;
+    position: relative; z-index: 1; width: min(100%, 440px);
+    background: var(--card); border: 1px solid var(--card-border); border-radius: var(--radius);
+    padding: 34px 26px 28px; text-align: center;
+    backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+    box-shadow: 0 30px 70px rgba(8,4,30,.55), inset 0 1px 0 rgba(255,255,255,.12);
   }
-  h1 { margin: 0 0 4px; font-size: 24px; }
-  .date { color: #6b7280; font-size: 14px; margin-bottom: 24px; }
-  label { display: block; text-align: left; font-size: 13px; color: #4b5563; margin-bottom: 6px; }
-  input, select {
-    width: 100%; padding: 12px; font-size: 16px; border: 1px solid #d1d5db; border-radius: 10px; margin-bottom: 14px;
+  .orb {
+    width: 72px; height: 72px; margin: 0 auto 14px; border-radius: 50%; font-size: 34px;
+    display: grid; place-items: center;
+    background: radial-gradient(circle at 32% 28%, #fff 0, #e9d5ff 14%, #a78bfa 48%, #4c1d95 100%);
+    box-shadow: 0 0 36px rgba(167,139,250,.65); animation: float 4s ease-in-out infinite;
   }
-  input::placeholder { color: #c4c8d0; }
-  button {
-    width: 100%; padding: 14px; font-size: 16px; font-weight: 600; color: #fff; border: 0; border-radius: 10px;
-    background: #6d28d9; cursor: pointer;
+  @keyframes float { 50% { transform: translateY(-6px); } }
+  h1 { margin: 0 0 6px; font-size: 26px; letter-spacing: -.02em; }
+  .date { color: var(--muted); font-size: 14px; margin-bottom: 26px; }
+  .view[hidden] { display: none; }
+  .view { animation: rise .5s ease both; }
+  @keyframes rise { from { opacity: 0; transform: translateY(14px); } }
+
+  /* 입력 폼 */
+  .field { text-align: left; margin-bottom: 16px; }
+  label { display: block; font-size: 13px; font-weight: 600; color: var(--muted); margin-bottom: 7px; }
+  input {
+    width: 100%; padding: 14px 16px; font-size: 16px; color: var(--text); font-family: inherit;
+    background: rgba(255,255,255,.07); border: 1.5px solid var(--card-border); border-radius: 14px;
+    outline: none; transition: border-color .2s, box-shadow .2s, background .2s;
   }
-  button:hover { background: #5b21b6; }
-  #result { display: none; margin-top: 24px; text-align: left; }
-  .score { text-align: center; font-size: 40px; font-weight: 700; color: #6d28d9; }
-  .score small { font-size: 16px; color: #6b7280; font-weight: 400; }
-  .msg { background: #f5f3ff; border-radius: 12px; padding: 14px 16px; margin: 14px 0; line-height: 1.6; }
-  .row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; font-size: 14px; }
-  .row:last-child { border-bottom: 0; }
-  .row b { color: #6b7280; font-weight: 500; }
+  input::placeholder { color: var(--faint); }
+  input:focus { border-color: var(--accent); background: rgba(255,255,255,.1); box-shadow: 0 0 0 4px rgba(167,139,250,.22); }
+  input[aria-invalid="true"] { border-color: var(--danger); box-shadow: 0 0 0 4px rgba(253,164,175,.16); }
+  .hint { display: block; min-height: 18px; margin-top: 6px; font-size: 12.5px; color: var(--faint); }
+  .hint.err { color: var(--danger); }
+
+  .btn {
+    width: 100%; padding: 15px; font-size: 16px; font-weight: 700; font-family: inherit; color: #fff;
+    border: 0; border-radius: 14px; cursor: pointer; margin-top: 4px;
+    background: linear-gradient(135deg, #8b5cf6, #d946ef);
+    box-shadow: 0 10px 26px rgba(139,92,246,.45);
+    transition: transform .15s, box-shadow .2s, filter .2s;
+  }
+  .btn:hover { transform: translateY(-2px); filter: brightness(1.08); }
+  .btn:active { transform: translateY(0) scale(.99); }
+  .btn:focus-visible, .ghost:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+  .ghost {
+    flex: 1; padding: 13px; font-size: 14.5px; font-weight: 600; font-family: inherit; color: var(--text);
+    background: rgba(255,255,255,.08); border: 1px solid var(--card-border); border-radius: 12px; cursor: pointer;
+    transition: background .2s;
+  }
+  .ghost:hover { background: rgba(255,255,255,.16); }
+
+  /* 로딩 */
+  .loading { padding: 34px 0 20px; color: var(--muted); }
+  .spinner {
+    width: 54px; height: 54px; margin: 0 auto 18px; border-radius: 50%;
+    border: 4px solid rgba(255,255,255,.14); border-top-color: var(--accent2); animation: spin 0.9s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* 결과 */
+  .who { font-size: 15px; color: var(--muted); margin-bottom: 4px; }
+  .who b { color: var(--text); }
+  .badges { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 18px; }
+  .badge { font-size: 12.5px; padding: 5px 11px; border-radius: 99px; background: rgba(167,139,250,.2); color: #ddd1ff; }
+
+  .ring { position: relative; width: 168px; height: 168px; margin: 0 auto 6px; }
+  .ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+  .ring circle { fill: none; stroke-width: 11; stroke-linecap: round; }
+  .ring .track { stroke: rgba(255,255,255,.12); }
+  .ring .bar { stroke: url(#grad); stroke-dasharray: 440; stroke-dashoffset: 440; transition: stroke-dashoffset 1.3s cubic-bezier(.2,.8,.2,1); }
+  .ring .num { position: absolute; inset: 0; display: grid; place-content: center; }
+  .ring .num strong { font-size: 52px; line-height: 1; font-weight: 800; }
+  .ring .num span { font-size: 13px; color: var(--muted); margin-top: 4px; }
+  .grade { font-weight: 700; color: var(--gold); margin-bottom: 14px; }
+
+  .msg {
+    background: rgba(255,255,255,.07); border: 1px solid var(--card-border); border-radius: 16px;
+    padding: 16px 18px; line-height: 1.7; font-size: 15px; text-align: left; margin-bottom: 14px;
+  }
+  .stat { display: grid; grid-template-columns: 92px 1fr auto; align-items: center; gap: 10px; padding: 9px 0; font-size: 14px; text-align: left; }
+  .stat .name { color: var(--muted); }
+  .meter { height: 8px; border-radius: 99px; background: rgba(255,255,255,.12); overflow: hidden; }
+  .meter i { display: block; height: 100%; width: 0; border-radius: 99px; background: linear-gradient(90deg, #a78bfa, #f0abfc); transition: width 1s cubic-bezier(.2,.8,.2,1); }
+  .stat .stars-txt { color: var(--gold); font-size: 12px; letter-spacing: 1px; min-width: 64px; text-align: right; }
+
+  .lucky { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 12px 0 18px; }
+  .lucky div { background: rgba(255,255,255,.07); border: 1px solid var(--card-border); border-radius: 14px; padding: 12px; }
+  .lucky small { display: block; color: var(--muted); font-size: 12px; margin-bottom: 6px; }
+  .lucky b { font-size: 17px; display: inline-flex; align-items: center; gap: 8px; }
+  .swatch { width: 16px; height: 16px; border-radius: 50%; border: 2px solid rgba(255,255,255,.7); }
+  .actions { display: flex; gap: 10px; }
+  .toast { min-height: 20px; margin-top: 12px; font-size: 13px; color: var(--accent2); }
+
+  .foot { margin-top: 18px; font-size: 11.5px; color: var(--faint); }
+
+  @media (max-width: 380px) {
+    .card { padding: 28px 18px 22px; }
+    .stat { grid-template-columns: 78px 1fr auto; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+  }
 </style>
 </head>
 <body>
-<div class="card">
-  <h1>🔮 오늘의 운세</h1>
+<div class="stars" id="stars" aria-hidden="true"></div>
+
+<main class="card">
+  <div class="orb" aria-hidden="true">🔮</div>
+  <h1>오늘의 운세</h1>
   <div class="date" id="today"></div>
 
-  <label for="name">이름</label>
-  <input id="name" placeholder="이름을 입력하세요">
-  <label for="birth">생년월일</label>
-  <input id="birth" type="text" inputmode="numeric" autocomplete="off" maxlength="14" placeholder="연도. 월. 일.">
-  <button id="go">오늘의 운세 보기</button>
+  <!-- 1) 입력 화면 -->
+  <form class="view" id="formView" novalidate>
+    <div class="field">
+      <label for="name">이름</label>
+      <input id="name" name="name" placeholder="이름을 입력하세요" maxlength="10" autocomplete="given-name" required>
+      <span class="hint" id="nameHint" aria-live="polite"></span>
+    </div>
+    <div class="field">
+      <label for="birth">생년월일</label>
+      <input id="birth" name="birth" type="text" inputmode="numeric" autocomplete="bday" maxlength="14" placeholder="연도. 월. 일." aria-describedby="birthHint">
+      <span class="hint" id="birthHint" aria-live="polite">숫자만 입력하세요. 예) 19900115</span>
+    </div>
+    <button class="btn" type="submit" id="go">✨ 오늘의 운세 보기</button>
+    <div class="foot">재미로 보는 운세예요. 같은 날에는 같은 결과가 나옵니다.</div>
+  </form>
 
-  <div id="result">
-    <div class="score"><span id="score"></span><small> / 100</small></div>
-    <div class="msg" id="msg"></div>
-    <div class="row"><b>재물운</b><span id="money"></span></div>
-    <div class="row"><b>직장·학업운</b><span id="work"></span></div>
-    <div class="row"><b>애정운</b><span id="love"></span></div>
-    <div class="row"><b>행운의 색</b><span id="color"></span></div>
-    <div class="row"><b>행운의 숫자</b><span id="num"></span></div>
+  <!-- 2) 로딩 화면 -->
+  <div class="view loading" id="loadView" hidden role="status" aria-live="polite">
+    <div class="spinner"></div>
+    <div id="loadText">별의 움직임을 읽는 중...</div>
   </div>
-</div>
+
+  <!-- 3) 결과 화면 -->
+  <section class="view" id="result" hidden aria-live="polite">
+    <div class="who"><b id="rName"></b>님의 오늘</div>
+    <div class="badges"><span class="badge" id="rZodiac"></span><span class="badge" id="rStar"></span></div>
+
+    <div class="ring">
+      <svg viewBox="0 0 160 160" aria-hidden="true">
+        <defs><linearGradient id="grad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#a78bfa"/><stop offset="1" stop-color="#f0abfc"/></linearGradient></defs>
+        <circle class="track" cx="80" cy="80" r="70"/>
+        <circle class="bar" id="bar" cx="80" cy="80" r="70"/>
+      </svg>
+      <div class="num"><strong id="score">0</strong><span>/ 100점</span></div>
+    </div>
+    <div class="grade" id="grade"></div>
+
+    <div class="msg" id="msg"></div>
+
+    <div class="stat"><span class="name">💰 재물운</span><div class="meter"><i id="mMoney"></i></div><span class="stars-txt" id="money"></span></div>
+    <div class="stat"><span class="name">💼 직장·학업운</span><div class="meter"><i id="mWork"></i></div><span class="stars-txt" id="work"></span></div>
+    <div class="stat"><span class="name">💕 애정운</span><div class="meter"><i id="mLove"></i></div><span class="stars-txt" id="love"></span></div>
+
+    <div class="lucky">
+      <div><small>행운의 색</small><b><span class="swatch" id="swatch"></span><span id="color"></span></b></div>
+      <div><small>행운의 숫자</small><b id="num"></b></div>
+    </div>
+
+    <div class="actions">
+      <button class="ghost" type="button" id="copy">📋 결과 복사</button>
+      <button class="ghost" type="button" id="again">↩ 다시 보기</button>
+    </div>
+    <div class="toast" id="toast" role="status"></div>
+  </section>
+</main>
 
 <script>
+  const $ = id => document.getElementById(id);
+
   const messages = [
     "새로운 기회가 문을 두드리는 날입니다. 망설이지 말고 먼저 손을 내밀어 보세요.",
     "차분하게 한 걸음씩 나아가면 좋은 결과가 따릅니다. 서두르지 않아도 괜찮습니다.",
@@ -69,12 +215,36 @@
     "뜻밖의 반가운 소식이 들려올 수 있습니다. 열린 마음으로 하루를 보내세요.",
     "자신감을 갖고 의견을 표현해 보세요. 당신의 아이디어가 주목받을 것입니다."
   ];
-  const stars = ["★☆☆☆☆", "★★☆☆☆", "★★★☆☆", "★★★★☆", "★★★★★"];
-  const colors = ["빨강", "주황", "노랑", "초록", "파랑", "보라", "분홍", "하양", "검정", "하늘색"];
+  const colors = [
+    ["빨강", "#ef4444"], ["주황", "#f97316"], ["노랑", "#facc15"], ["초록", "#22c55e"], ["파랑", "#3b82f6"],
+    ["보라", "#a855f7"], ["분홍", "#ec4899"], ["하양", "#f8fafc"], ["검정", "#111827"], ["하늘색", "#38bdf8"]
+  ];
+  const animals = ["쥐", "소", "호랑이", "토끼", "용", "뱀", "말", "양", "원숭이", "닭", "개", "돼지"];
+  const animalEmoji = ["🐭", "🐮", "🐯", "🐰", "🐲", "🐍", "🐴", "🐑", "🐵", "🐔", "🐶", "🐷"];
+  // 별자리: [시작 월, 시작 일, 이름]
+  const signs = [[1,20,"물병자리 ♒"],[2,19,"물고기자리 ♓"],[3,21,"양자리 ♈"],[4,20,"황소자리 ♉"],[5,21,"쌍둥이자리 ♊"],[6,22,"게자리 ♋"],
+                 [7,23,"사자자리 ♌"],[8,23,"처녀자리 ♍"],[9,23,"천칭자리 ♎"],[10,24,"전갈자리 ♏"],[11,23,"사수자리 ♐"],[12,22,"염소자리 ♑"]];
+  function zodiacSign(m, d) {
+    let name = "염소자리 ♑";
+    for (const [sm, sd, n] of signs) if (m > sm || (m === sm && d >= sd)) name = n;
+    return name;
+  }
 
-  const d = new Date();
-  document.getElementById("today").textContent =
-    `${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일`;
+  const now = new Date();
+  $("today").textContent = now.toLocaleDateString("ko-KR", { year: "numeric", month: "long", day: "numeric", weekday: "long" });
+
+  // 배경 별 생성
+  (function () {
+    const box = $("stars"), frag = document.createDocumentFragment();
+    for (let i = 0; i < 46; i++) {
+      const s = document.createElement("i");
+      s.style.left = Math.random() * 100 + "%"; s.style.top = Math.random() * 100 + "%";
+      s.style.animationDelay = (Math.random() * 3.4).toFixed(2) + "s";
+      s.style.transform = `scale(${0.6 + Math.random()})`;
+      frag.appendChild(s);
+    }
+    box.appendChild(frag);
+  })();
 
   // 같은 사람·같은 날에는 항상 같은 결과가 나오도록 시드 기반 난수 사용
   function hash(str) {
@@ -87,42 +257,107 @@
   }
 
   // 생년월일: 숫자만 받아 "YYYY. MM. DD." 형태로 자동 정리 (연도는 4자리까지만)
-  const birthEl = document.getElementById("birth");
+  const birthEl = $("birth"), nameEl = $("name");
   birthEl.addEventListener("input", () => {
     const digits = birthEl.value.replace(/\D/g, "").slice(0, 8);
-    const y = digits.slice(0, 4), m = digits.slice(4, 6), day = digits.slice(6, 8);
-    let out = y;
+    let out = digits.slice(0, 4);
     if (digits.length >= 4) out += ". ";
-    out += m;
+    out += digits.slice(4, 6);
     if (digits.length >= 6) out += ". ";
-    out += day;
+    out += digits.slice(6, 8);
     if (digits.length === 8) out += ".";
     birthEl.value = out;
+    setHint("birth", "숫자만 입력하세요. 예) 19900115");
   });
+  nameEl.addEventListener("input", () => setHint("name", ""));
 
-  document.getElementById("go").addEventListener("click", () => {
-    const name = document.getElementById("name").value.trim();
+  function setHint(field, text, isErr) {
+    const el = $(field === "name" ? "nameHint" : "birthHint");
+    el.textContent = text; el.classList.toggle("err", !!isErr);
+    (field === "name" ? nameEl : birthEl).setAttribute("aria-invalid", isErr ? "true" : "false");
+  }
+
+  function show(id) {
+    for (const v of ["formView", "loadView", "result"]) $(v).hidden = v !== id;
+  }
+
+  let lastText = "";
+  $("formView").addEventListener("submit", e => {
+    e.preventDefault();
+    const name = nameEl.value.trim();
     const digits = birthEl.value.replace(/\D/g, "");
-    if (!name || digits.length !== 8) { alert("이름과 생년월일(연도 4자리, 월, 일)을 입력해 주세요."); return; }
+    let ok = true;
+    if (!name) { setHint("name", "이름을 입력해 주세요.", true); ok = false; }
     const by = +digits.slice(0, 4), bm = +digits.slice(4, 6), bd = +digits.slice(6, 8);
     const bt = new Date(by, bm - 1, bd);
-    if (by < 1900 || bt.getFullYear() !== by || bt.getMonth() !== bm - 1 || bt.getDate() !== bd) {
-      alert("올바른 생년월일을 입력해 주세요."); return;
+    if (digits.length !== 8) { setHint("birth", "연도 4자리, 월, 일을 모두 입력해 주세요.", true); ok = false; }
+    else if (by < 1900 || bt > now || bt.getFullYear() !== by || bt.getMonth() !== bm - 1 || bt.getDate() !== bd) {
+      setHint("birth", "올바른 생년월일을 입력해 주세요.", true); ok = false;
     }
-    const birth = `${digits.slice(0, 4)}-${digits.slice(4, 6)}-${digits.slice(6, 8)}`;
-    const key = `${name}|${birth}|${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+    if (!ok) { (name ? birthEl : nameEl).focus(); return; }
+
+    show("loadView");
+    const texts = ["별의 움직임을 읽는 중...", "오늘의 기운을 모으는 중...", "거의 다 됐어요!"];
+    let i = 0; $("loadText").textContent = texts[0];
+    const t = setInterval(() => { i = Math.min(i + 1, texts.length - 1); $("loadText").textContent = texts[i]; }, 600);
+    setTimeout(() => { clearInterval(t); render(name, by, bm, bd); }, 1700);
+  });
+
+  const starTxt = n => "★".repeat(n) + "☆".repeat(5 - n);
+
+  function render(name, by, bm, bd) {
+    const birth = `${by}-${bm}-${bd}`;
+    const key = `${name}|${birth}|${now.getFullYear()}-${now.getMonth()}-${now.getDate()}`;
     const r = rng(hash(key));
     const pick = arr => arr[Math.floor(r() * arr.length)];
+    const star = () => 1 + Math.floor(r() * 5);
 
-    document.getElementById("score").textContent = 50 + Math.floor(r() * 51);
-    document.getElementById("msg").textContent = `${name}님, ${pick(messages)}`;
-    document.getElementById("money").textContent = pick(stars);
-    document.getElementById("work").textContent = pick(stars);
-    document.getElementById("love").textContent = pick(stars);
-    document.getElementById("color").textContent = pick(colors);
-    document.getElementById("num").textContent = 1 + Math.floor(r() * 45);
-    document.getElementById("result").style.display = "block";
+    const score = 50 + Math.floor(r() * 51);
+    const msg = `${name}님, ${pick(messages)}`;
+    const money = star(), work = star(), love = star();
+    const [colorName, colorHex] = pick(colors);
+    const num = 1 + Math.floor(r() * 45);
+    const grade = score >= 90 ? "🌟 최고의 하루!" : score >= 75 ? "😊 좋은 기운이 가득해요" : score >= 60 ? "🙂 무난하고 평온한 하루" : "🍀 천천히, 여유롭게 보내세요";
+    const animal = animals[((by - 4) % 12 + 12) % 12], emoji = animalEmoji[((by - 4) % 12 + 12) % 12];
+    const sign = zodiacSign(bm, bd);
+
+    $("rName").textContent = name;
+    $("rZodiac").textContent = `${emoji} ${animal}띠`;
+    $("rStar").textContent = sign;
+    $("msg").textContent = msg;
+    $("grade").textContent = grade;
+    $("color").textContent = colorName;
+    $("swatch").style.background = colorHex;
+    $("num").textContent = num;
+    for (const [id, mid, v] of [["money", "mMoney", money], ["work", "mWork", work], ["love", "mLove", love]]) {
+      $(id).textContent = starTxt(v); $(id).setAttribute("aria-label", `5점 만점에 ${v}점`);
+    }
+    show("result");
+    $("toast").textContent = "";
+
+    // 애니메이션 (점수 링 · 숫자 카운트업 · 막대)
+    $("score").textContent = "0"; $("bar").style.strokeDashoffset = 440;
+    for (const id of ["mMoney", "mWork", "mLove"]) $(id).style.width = "0";
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      $("bar").style.strokeDashoffset = 440 - 440 * score / 100;
+      $("mMoney").style.width = money * 20 + "%"; $("mWork").style.width = work * 20 + "%"; $("mLove").style.width = love * 20 + "%";
+      const start = performance.now();
+      (function tick(t) {
+        const p = Math.min((t - start) / 1200, 1);
+        $("score").textContent = Math.round(score * (1 - Math.pow(1 - p, 3)));
+        if (p < 1) requestAnimationFrame(tick);
+      })(start);
+    }));
+
+    lastText = `🔮 ${name}님의 오늘의 운세 (${$("today").textContent})\n종합 ${score}점 · ${grade}\n${msg}\n` +
+      `재물운 ${starTxt(money)} / 직장·학업운 ${starTxt(work)} / 애정운 ${starTxt(love)}\n행운의 색: ${colorName} · 행운의 숫자: ${num}`;
+  }
+
+  $("copy").addEventListener("click", async () => {
+    try { await navigator.clipboard.writeText(lastText); $("toast").textContent = "결과를 복사했어요 ✓"; }
+    catch { $("toast").textContent = "복사에 실패했어요. 직접 선택해서 복사해 주세요."; }
   });
+  $("again").addEventListener("click", () => { show("formView"); nameEl.focus(); });
 </script>
 </body>
 </html>
