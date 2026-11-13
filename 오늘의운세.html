@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>오늘의 운세</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    font-family: -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    background: linear-gradient(160deg, #1e1b4b, #4c1d95 60%, #7e22ce); color: #1f2937;
+  }
+  .card {
+    width: min(92vw, 420px); background: #fff; border-radius: 20px; padding: 32px 28px;
+    box-shadow: 0 20px 50px rgba(0,0,0,.35); text-align: center;
+  }
+  h1 { margin: 0 0 4px; font-size: 24px; }
+  .date { color: #6b7280; font-size: 14px; margin-bottom: 24px; }
+  label { display: block; text-align: left; font-size: 13px; color: #4b5563; margin-bottom: 6px; }
+  input, select {
+    width: 100%; padding: 12px; font-size: 16px; border: 1px solid #d1d5db; border-radius: 10px; margin-bottom: 14px;
+  }
+  button {
+    width: 100%; padding: 14px; font-size: 16px; font-weight: 600; color: #fff; border: 0; border-radius: 10px;
+    background: #6d28d9; cursor: pointer;
+  }
+  button:hover { background: #5b21b6; }
+  #result { display: none; margin-top: 24px; text-align: left; }
+  .score { text-align: center; font-size: 40px; font-weight: 700; color: #6d28d9; }
+  .score small { font-size: 16px; color: #6b7280; font-weight: 400; }
+  .msg { background: #f5f3ff; border-radius: 12px; padding: 14px 16px; margin: 14px 0; line-height: 1.6; }
+  .row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; font-size: 14px; }
+  .row:last-child { border-bottom: 0; }
+  .row b { color: #6b7280; font-weight: 500; }
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>🔮 오늘의 운세</h1>
+  <div class="date" id="today"></div>
+
+  <label for="name">이름</label>
+  <input id="name" placeholder="이름을 입력하세요">
+  <label for="birth">생년월일</label>
+  <input id="birth" type="date">
+  <button id="go">오늘의 운세 보기</button>
+
+  <div id="result">
+    <div class="score"><span id="score"></span><small> / 100</small></div>
+    <div class="msg" id="msg"></div>
+    <div class="row"><b>재물운</b><span id="money"></span></div>
+    <div class="row"><b>직장·학업운</b><span id="work"></span></div>
+    <div class="row"><b>애정운</b><span id="love"></span></div>
+    <div class="row"><b>행운의 색</b><span id="color"></span></div>
+    <div class="row"><b>행운의 숫자</b><span id="num"></span></div>
+  </div>
+</div>
+
+<script>
+  const messages = [
+    "새로운 기회가 문을 두드리는 날입니다. 망설이지 말고 먼저 손을 내밀어 보세요.",
+    "차분하게 한 걸음씩 나아가면 좋은 결과가 따릅니다. 서두르지 않아도 괜찮습니다.",
+    "주변 사람의 조언이 큰 힘이 됩니다. 귀 기울여 들어 보세요.",
+    "작은 행운이 곳곳에 숨어 있는 하루입니다. 사소한 일에도 감사하는 마음을 가져 보세요.",
+    "오늘은 잠시 쉬어 가도 좋은 날입니다. 충분한 휴식이 내일의 에너지가 됩니다.",
+    "미뤄 두었던 일을 마무리하기 좋은 날입니다. 시작하면 생각보다 금방 끝납니다.",
+    "뜻밖의 반가운 소식이 들려올 수 있습니다. 열린 마음으로 하루를 보내세요.",
+    "자신감을 갖고 의견을 표현해 보세요. 당신의 아이디어가 주목받을 것입니다."
+  ];
+  const stars = ["★☆☆☆☆", "★★☆☆☆", "★★★☆☆", "★★★★☆", "★★★★★"];
+  const colors = ["빨강", "주황", "노랑", "초록", "파랑", "보라", "분홍", "하양", "검정", "하늘색"];
+
+  const d = new Date();
+  document.getElementById("today").textContent =
+    `${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일`;
+
+  // 같은 사람·같은 날에는 항상 같은 결과가 나오도록 시드 기반 난수 사용
+  function hash(str) {
+    let h = 2166136261;
+    for (const c of str) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); }
+    return h >>> 0;
+  }
+  function rng(seed) {
+    return () => { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed / 4294967296; };
+  }
+
+  document.getElementById("go").addEventListener("click", () => {
+    const name = document.getElementById("name").value.trim();
+    const birth = document.getElementById("birth").value;
+    if (!name || !birth) { alert("이름과 생년월일을 입력해 주세요."); return; }
+    const key = `${name}|${birth}|${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+    const r = rng(hash(key));
+    const pick = arr => arr[Math.floor(r() * arr.length)];
+
+    document.getElementById("score").textContent = 50 + Math.floor(r() * 51);
+    document.getElementById("msg").textContent = `${name}님, ${pick(messages)}`;
+    document.getElementById("money").textContent = pick(stars);
+    document.getElementById("work").textContent = pick(stars);
+    document.getElementById("love").textContent = pick(stars);
+    document.getElementById("color").textContent = pick(colors);
+    document.getElementById("num").textContent = 1 + Math.floor(r() * 45);
+    document.getElementById("result").style.display = "block";
+  });
+</script>
+</body>
+</html>
