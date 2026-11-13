@@ -258,16 +258,44 @@
 
   // 생년월일: 숫자만 받아 "YYYY. MM. DD." 형태로 자동 정리 (연도는 4자리까지만)
   const birthEl = $("birth"), nameEl = $("name");
-  birthEl.addEventListener("input", () => {
-    const digits = birthEl.value.replace(/\D/g, "").slice(0, 8);
+  // 지울 때는 뒤에 ". " 를 붙이지 않아야 Backspace/Delete 로 끝까지 지울 수 있음
+  function formatBirth(digits, typing) {
     let out = digits.slice(0, 4);
-    if (digits.length >= 4) out += ". ";
+    if (digits.length > 4 || (typing && digits.length === 4)) out += ". ";
     out += digits.slice(4, 6);
-    if (digits.length >= 6) out += ". ";
+    if (digits.length > 6 || (typing && digits.length === 6)) out += ". ";
     out += digits.slice(6, 8);
-    if (digits.length === 8) out += ".";
-    birthEl.value = out;
+    if (typing && digits.length === 8) out += ".";
+    return out;
+  }
+  birthEl.addEventListener("input", e => {
+    const deleting = (e.inputType || "").startsWith("delete");
+    const caret = birthEl.selectionStart ?? birthEl.value.length;
+    const digitsBeforeCaret = birthEl.value.slice(0, caret).replace(/\D/g, "").length;
+    const digits = birthEl.value.replace(/\D/g, "").slice(0, 8);
+    const atEnd = caret >= birthEl.value.length;
+    birthEl.value = formatBirth(digits, !deleting);
+    // 커서 위치 복원: 가운데를 지워도 커서가 맨 끝으로 튀지 않게 함
+    let pos = birthEl.value.length;
+    if (!atEnd || deleting) {
+      let seen = 0; pos = 0;
+      while (pos < birthEl.value.length && seen < Math.min(digitsBeforeCaret, digits.length)) {
+        if (/\d/.test(birthEl.value[pos])) seen++;
+        pos++;
+      }
+    }
+    birthEl.setSelectionRange(pos, pos);
     setHint("birth", "숫자만 입력하세요. 예) 19900115");
+  });
+  // Backspace/Delete 가 ". " 구분 글자 위에서 멈추지 않고 숫자를 건너뛰어 지우도록 처리
+  birthEl.addEventListener("keydown", e => {
+    if ((e.key !== "Backspace" && e.key !== "Delete") || e.isComposing) return;
+    const v = birthEl.value;
+    if (birthEl.selectionStart !== birthEl.selectionEnd) return;
+    let p = birthEl.selectionStart;
+    if (e.key === "Backspace") { while (p > 0 && !/\d/.test(v[p - 1])) p--; }
+    else { while (p < v.length && !/\d/.test(v[p])) p++; }
+    birthEl.setSelectionRange(p, p);
   });
   nameEl.addEventListener("input", () => setHint("name", ""));
 
