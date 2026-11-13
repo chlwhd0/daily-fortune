@@ -21,6 +21,7 @@
   input, select {
     width: 100%; padding: 12px; font-size: 16px; border: 1px solid #d1d5db; border-radius: 10px; margin-bottom: 14px;
   }
+  input::placeholder { color: #c4c8d0; }
   button {
     width: 100%; padding: 14px; font-size: 16px; font-weight: 600; color: #fff; border: 0; border-radius: 10px;
     background: #6d28d9; cursor: pointer;
@@ -43,7 +44,7 @@
   <label for="name">이름</label>
   <input id="name" placeholder="이름을 입력하세요">
   <label for="birth">생년월일</label>
-  <input id="birth" type="date">
+  <input id="birth" type="text" inputmode="numeric" autocomplete="off" maxlength="14" placeholder="연도. 월. 일.">
   <button id="go">오늘의 운세 보기</button>
 
   <div id="result">
@@ -85,10 +86,30 @@
     return () => { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed / 4294967296; };
   }
 
+  // 생년월일: 숫자만 받아 "YYYY. MM. DD." 형태로 자동 정리 (연도는 4자리까지만)
+  const birthEl = document.getElementById("birth");
+  birthEl.addEventListener("input", () => {
+    const digits = birthEl.value.replace(/\D/g, "").slice(0, 8);
+    const y = digits.slice(0, 4), m = digits.slice(4, 6), day = digits.slice(6, 8);
+    let out = y;
+    if (digits.length >= 4) out += ". ";
+    out += m;
+    if (digits.length >= 6) out += ". ";
+    out += day;
+    if (digits.length === 8) out += ".";
+    birthEl.value = out;
+  });
+
   document.getElementById("go").addEventListener("click", () => {
     const name = document.getElementById("name").value.trim();
-    const birth = document.getElementById("birth").value;
-    if (!name || !birth) { alert("이름과 생년월일을 입력해 주세요."); return; }
+    const digits = birthEl.value.replace(/\D/g, "");
+    if (!name || digits.length !== 8) { alert("이름과 생년월일(연도 4자리, 월, 일)을 입력해 주세요."); return; }
+    const by = +digits.slice(0, 4), bm = +digits.slice(4, 6), bd = +digits.slice(6, 8);
+    const bt = new Date(by, bm - 1, bd);
+    if (by < 1900 || bt.getFullYear() !== by || bt.getMonth() !== bm - 1 || bt.getDate() !== bd) {
+      alert("올바른 생년월일을 입력해 주세요."); return;
+    }
+    const birth = `${digits.slice(0, 4)}-${digits.slice(4, 6)}-${digits.slice(6, 8)}`;
     const key = `${name}|${birth}|${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
     const r = rng(hash(key));
     const pick = arr => arr[Math.floor(r() * arr.length)];
